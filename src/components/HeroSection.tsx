@@ -3,9 +3,11 @@ import kenyaCollage from "@/assets/kenya-collage.png";
 
 const HeroSection = () => {
   return (
-    <section className="relative min-h-[420px] md:min-h-[480px] flex items-center overflow-hidden"
+    <section
+      className="relative min-h-[420px] md:min-h-[480px] flex items-center overflow-hidden"
       style={{
-        background: "linear-gradient(135deg, hsl(207, 78%, 82%) 0%, hsl(210, 70%, 72%) 40%, hsl(207, 68%, 65%) 70%, hsl(210, 60%, 60%) 100%)"
+        background:
+          "linear-gradient(135deg, hsl(207, 78%, 82%) 0%, hsl(210, 70%, 72%) 40%, hsl(207, 68%, 65%) 70%, hsl(210, 60%, 60%) 100%)",
       }}
     >
       {/* Decorative circles */}
@@ -17,17 +19,23 @@ const HeroSection = () => {
         {/* Left content */}
         <div className="flex-1 max-w-xl">
           <h1 className="text-3xl md:text-[2.75rem] font-bold text-primary-foreground leading-tight">
-            Get first loan online<br />
-            within 15 minutes
+            Instant loans & payments<br />
+            directly to your phone
           </h1>
-          <p className="text-xl md:text-2xl text-primary-foreground mt-1 font-semibold">
-            Fast and safe apply
+
+          <p className="text-xl md:text-2xl text-primary-foreground mt-2 font-semibold">
+            Fast • Secure • M-Pesa STK Push
           </p>
+
+          <p className="text-sm text-primary-foreground/80 mt-3">
+            Access funds or complete payments in seconds with Mkopo Hub — no paperwork, no delays.
+          </p>
+
           <Link
             to="/apply"
             className="inline-block mt-8 px-14 py-4 bg-secondary text-secondary-foreground font-semibold rounded-lg text-base hover:brightness-110 transition-all shadow-lg"
           >
-            Apply for a loan
+            Get Started
           </Link>
         </div>
 
