@@ -7,29 +7,34 @@ import {
 
 const faqs = [
   {
-    question: "What is an online loan?",
+    question: "What is Mkopo Hub?",
     answer:
-      "An online loan is a type of credit that you can apply for and receive over the internet. It offers quick access to funds for short-term financial needs. Our loans range from 1000 to 150,000 KES.",
+      "Mkopo Hub is a digital financial platform that allows users to access instant mobile loans and make seamless payments via M-Pesa. It provides fast, secure, and convenient financial services directly from your phone.",
   },
   {
-    question: "Is LendPlus loan app legit?",
+    question: "Is Mkopo Hub legit?",
     answer:
-      "Yes, the LendPlus loan app is legitimate. It's a registered financial service provider in Kenya offering online lending services to eligible borrowers. The company adheres to the regulations set by the relevant authorities.",
+      "Yes, Mkopo Hub operates as a secure digital platform designed to facilitate loans and payments. We prioritize data protection, transparency, and reliable service for all users.",
   },
   {
-    question: "How does LendPlus work?",
+    question: "How does Mkopo Hub work?",
     answer:
-      "LendPlus works through an easy-to-use mobile app. Download the app, register and fill out a simple form with your personal details and financial information. Once approved, the loan amount is deposited directly into your M-Pesa account.",
+      "Mkopo Hub works through a simple online process. Enter your details, request a loan or payment, and confirm via M-Pesa STK push. Once approved, funds are disbursed instantly or payments are processed in real time.",
   },
   {
-    question: "How to apply for a quick M-Pesa loan?",
+    question: "How do I request a loan or make a payment?",
     answer:
-      "Get approved within minutes by completing a straightforward application and verification process. The asked amount will be directly deposited into your M-Pesa for easy access.",
+      "Simply enter your phone number and amount, then confirm the transaction via the M-Pesa prompt sent to your phone (STK push). The process takes only a few seconds.",
   },
   {
-    question: "How to get the maximum loan limit of 150,000 KES?",
+    question: "How long does it take to receive funds?",
     answer:
-      "The more consistently you repay your M-Pesa loans on time, the higher your credit limit grows. By being a responsible borrower, you can quickly move from small starter loans to the full KES 150,000.",
+      "Transactions are processed instantly. Once you approve the M-Pesa prompt, funds are sent to your account or the payment is completed within seconds.",
+  },
+  {
+    question: "Can my loan limit increase?",
+    answer:
+      "Yes, consistent usage and timely repayments improve your profile, allowing you to access higher limits over time.",
   },
 ];
 
