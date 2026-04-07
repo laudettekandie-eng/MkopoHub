@@ -1,0 +1,21 @@
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle -->
+  <circle cx="100" cy="100" r="90" fill="#0F172A"></circle>
+
+  <!-- Kenyan green accent -->
+  <path d="M40 120 Q100 40 160 120" stroke="#16A34A" stroke-width="8" fill="none"></path>
+
+  <!-- Coin / money symbol -->
+  <circle cx="100" cy="110" r="30" fill="#22C55E"></circle>
+  <text x="100" y="118" text-anchor="middle" font-size="28" fill="white" font-family="Arial, sans-serif" font-weight="bold">
+    K
+  </text>
+
+  <!-- Upward growth arrow -->
+  <path d="M70 140 L100 80 L130 140" stroke="#4ADE80" stroke-width="6" fill="none"></path>
+  
+  <!-- App name -->
+  <text x="100" y="180" text-anchor="middle" font-size="16" fill="#E5E7EB" font-family="Arial, sans-serif">
+    MkopoHub
+  </text>
+</svg>
