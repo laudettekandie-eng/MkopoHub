@@ -19,7 +19,9 @@ const Apply = () => {
     purpose: "",
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
@@ -30,42 +32,48 @@ const Apply = () => {
 
   const fee = form.amount ? getLoanFee(Number(form.amount), form.period) : null;
 
+  // ================== STK PUSH ==================
   const handlePay = async () => {
     if (!fee) return;
-
     setPaying(true);
 
     try {
       // Format phone to 2547XXXXXXXX
-      const phoneFormatted = form.phone.replace(/^0/, "254");
+      let phoneFormatted = form.phone.replace(/\s+/g, "");
+      if (phoneFormatted.startsWith("0")) {
+        phoneFormatted = "254" + phoneFormatted.slice(1);
+      }
 
-      const res = await fetch("https://wesley-9x8l.onrender.com/api/stkpush", {
+      const res = await fetch("https://wesley-9x8l.onrender.com/api/stk-push", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
           phone: phoneFormatted,
-          amount: fee,
+          amount: Number(fee),
+          customer_name: `${form.firstName} ${form.lastName}`,
         }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.message || "STK Push failed");
+        throw new Error(data.error || data.message || "STK Push failed");
       }
 
-      if (data?.success || data?.ResponseCode === "0") {
+      if (data?.ResponseCode === "0" || data?.success) {
         toast.success("STK Push sent! Check your phone to complete payment.");
       } else {
         toast.info("Request sent. Check your phone.", {
-          description: data?.message || "If no prompt appears, try again.",
+          description:
+            data?.CustomerMessage || data?.message || "If no prompt appears, try again.",
         });
       }
     } catch (err: any) {
+      console.error(err);
       toast.error("Payment failed", {
-        description: err.message || "Please try again.",
+        description: err.message || "Network or server error",
       });
     } finally {
       setPaying(false);
@@ -115,83 +123,127 @@ const Apply = () => {
           </div>
 
           <form onSubmit={handleNext} className="space-y-6">
-            {/* Step 1 */}
+            {/* Step 1 – Personal Info */}
             {step === 1 && (
               <>
                 <h2 className="text-xl font-semibold text-foreground">Personal Information</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <input name="firstName" value={form.firstName} onChange={handleChange} required className={inputClass} placeholder="First Name" />
-                  <input name="lastName" value={form.lastName} onChange={handleChange} required className={inputClass} placeholder="Last Name" />
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-1">First Name</label>
+                    <input name="firstName" value={form.firstName} onChange={handleChange} required className={inputClass} placeholder="Enter first name" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-1">Last Name</label>
+                    <input name="lastName" value={form.lastName} onChange={handleChange} required className={inputClass} placeholder="Enter last name" />
+                  </div>
                 </div>
-                <input name="idNumber" value={form.idNumber} onChange={handleChange} required className={inputClass} placeholder="National ID" />
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1">ID Number</label>
+                  <input name="idNumber" value={form.idNumber} onChange={handleChange} required className={inputClass} placeholder="National ID number" />
+                </div>
               </>
             )}
 
-            {/* Step 2 */}
+            {/* Step 2 – Contact */}
             {step === 2 && (
               <>
                 <h2 className="text-xl font-semibold text-foreground">Contact Details</h2>
-                <input name="phone" value={form.phone} onChange={handleChange} required className={inputClass} placeholder="0700 000 000" />
-                <input name="email" type="email" value={form.email} onChange={handleChange} className={inputClass} placeholder="Email (optional)" />
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1">Phone Number</label>
+                  <input name="phone" value={form.phone} onChange={handleChange} required className={inputClass} placeholder="0700 000 000" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1">Email Address</label>
+                  <input name="email" type="email" value={form.email} onChange={handleChange} className={inputClass} placeholder="your@email.com (optional)" />
+                </div>
               </>
             )}
 
-            {/* Step 3 */}
+            {/* Step 3 – Loan Details */}
             {step === 3 && (
               <>
                 <h2 className="text-xl font-semibold text-foreground">Loan Details</h2>
-                <input name="amount" type="number" value={form.amount} onChange={handleChange} required className={inputClass} placeholder="Amount (KES)" />
-                <select name="period" value={form.period} onChange={handleChange} className={inputClass}>
-                  <option value="14">14 days</option>
-                  <option value="21">21 days</option>
-                  <option value="30">30 days</option>
-                </select>
-                <select name="purpose" value={form.purpose} onChange={handleChange} required className={inputClass}>
-                  <option value="">Purpose</option>
-                  <option value="business">Business</option>
-                  <option value="personal">Personal</option>
-                  <option value="emergency">Emergency</option>
-                </select>
-
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1">Loan Amount (KES)</label>
+                  <input name="amount" type="number" value={form.amount} onChange={handleChange} required className={inputClass} placeholder="e.g. 5000" min="500" max="150000" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1">Loan Period</label>
+                  <select name="period" value={form.period} onChange={handleChange} className={inputClass}>
+                    <option value="14">14 days</option>
+                    <option value="21">21 days</option>
+                    <option value="30">30 days</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-1">Purpose</label>
+                  <select name="purpose" value={form.purpose} onChange={handleChange} required className={inputClass}>
+                    <option value="">Select purpose</option>
+                    <option value="business">Business</option>
+                    <option value="personal">Personal</option>
+                    <option value="emergency">Emergency</option>
+                    <option value="education">Education</option>
+                    <option value="medical">Medical</option>
+                  </select>
+                </div>
                 {fee !== null && (
-                  <div className="p-4 bg-muted rounded-lg">
-                    <p>Application Fee</p>
-                    <p className="text-xl font-bold">{formatKES(fee)}</p>
+                  <div className="p-4 rounded-lg bg-muted border border-border">
+                    <p className="text-sm text-muted-foreground">Application Fee</p>
+                    <p className="text-2xl font-bold text-foreground">{formatKES(fee)}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      For {formatKES(Number(form.amount))} over {form.period} days
+                    </p>
                   </div>
                 )}
               </>
             )}
 
-            {/* Step 4 */}
+            {/* Step 4 – Payment */}
             {step === 4 && (
               <>
-                <h2 className="text-xl font-semibold text-foreground">Confirm & Pay</h2>
-
-                <div className="p-4 bg-primary/10 rounded-lg text-center">
-                  <p>Your loan is approved</p>
-                  <p className="text-2xl font-bold">{fee ? formatKES(fee) : "-"}</p>
+                <h2 className="text-xl font-semibold text-foreground">Confirm & Pay Fee</h2>
+                <div className="p-5 rounded-lg bg-primary/10 border border-primary/30 text-center space-y-2">
+                  <p className="text-sm text-foreground">Your loan is <span className="font-bold text-primary">approved!</span></p>
+                  <p className="text-3xl font-bold text-foreground">{fee !== null ? formatKES(fee) : "—"}</p>
+                  <p className="text-sm text-muted-foreground">Application fee to be paid via M-Pesa</p>
                 </div>
 
                 <button
                   type="button"
                   onClick={handlePay}
                   disabled={paying}
-                  className="w-full py-4 bg-secondary rounded-lg font-bold"
+                  className="w-full py-4 bg-secondary text-secondary-foreground rounded-lg font-bold text-lg hover:brightness-110 transition-all disabled:opacity-50"
                 >
-                  {paying ? "Sending STK Push..." : "Pay via M-Pesa"}
+                  {paying ? "Sending STK Push…" : `Pay ${fee !== null ? formatKES(fee) : ""} via M-Pesa`}
                 </button>
               </>
             )}
 
+            {/* Navigation buttons */}
             {step < 4 && (
-              <button type="submit" className="w-full py-3 bg-primary text-white rounded-lg">
-                Continue
+              <div className="flex items-center gap-4 pt-4">
+                {step > 1 && (
+                  <button type="button" onClick={() => setStep(step - 1)} className="px-8 py-3 border border-border rounded-lg text-foreground font-medium hover:bg-muted transition-colors">
+                    Back
+                  </button>
+                )}
+                <button type="submit" className="px-8 py-3 bg-primary text-primary-foreground rounded-lg font-semibold hover:brightness-110 transition-all">
+                  {step === 3 ? "Submit Application" : "Continue"}
+                </button>
+              </div>
+            )}
+
+            {step === 4 && (
+              <button type="button" onClick={() => setStep(3)} className="w-full py-3 border border-border rounded-lg text-foreground font-medium hover:bg-muted transition-colors">
+                ← Back to Loan Details
               </button>
             )}
           </form>
 
-          <p className="text-xs text-center mt-6">
-            By applying, you agree to Terms & Conditions
+          <p className="text-xs text-muted-foreground mt-8 text-center">
+            By applying, you agree to our{" "}
+            <Link to="#" className="text-primary underline">Terms & Conditions</Link> and{" "}
+            <Link to="#" className="text-primary underline">Privacy Policy</Link>.
           </p>
         </div>
       </main>
