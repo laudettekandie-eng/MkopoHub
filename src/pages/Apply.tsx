@@ -1,3 +1,4 @@
+// (imports unchanged)
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import Header from "@/components/Header";
@@ -5,9 +6,15 @@ import Footer from "@/components/Footer";
 import { getLoanFee, formatKES } from "@/lib/loanFees";
 import { toast } from "sonner";
 
+const TILL_NUMBER = "6441148";
+
 const Apply = () => {
   const [step, setStep] = useState(1);
   const [paying, setPaying] = useState(false);
+  const [stkSent, setStkSent] = useState(false);
+  const [confirmMsg, setConfirmMsg] = useState("");
+  const [confirmStatus, setConfirmStatus] = useState<"idle" | "success" | "error">("idle");
+
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
@@ -19,232 +26,186 @@ const Apply = () => {
     purpose: "",
   });
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
+  const totalSteps = 4;
+
+  // ================= FORM =================
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleNext = (e: React.FormEvent) => {
+  const nextStep = (e: React.FormEvent) => {
     e.preventDefault();
-    if (step < 4) setStep(step + 1);
+    if (step < totalSteps) setStep((prev) => prev + 1);
   };
 
   const fee = form.amount ? getLoanFee(Number(form.amount), form.period) : null;
 
-  // ================== STK PUSH ==================
+  // ================= STK PUSH =================
   const handlePay = async () => {
     if (!fee) return;
+
     setPaying(true);
+    setStkSent(false);
+    setConfirmStatus("idle");
+    setConfirmMsg("");
 
     try {
-      // Format phone to 2547XXXXXXXX
-      let phoneFormatted = form.phone.replace(/\s+/g, "");
-      if (phoneFormatted.startsWith("0")) {
-        phoneFormatted = "254" + phoneFormatted.slice(1);
-      }
+      let phone = form.phone.replace(/\s+/g, "");
+      if (phone.startsWith("0")) phone = "254" + phone.slice(1);
 
       const res = await fetch("https://wesley-9x8l.onrender.com/api/stk-push", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          phone: phoneFormatted,
-          amount: Number(fee),
-          customer_name: `${form.firstName} ${form.lastName}`,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone, amount: Number(fee), customer_name: `${form.firstName} ${form.lastName}` }),
       });
 
       const data = await res.json();
 
-      if (!res.ok) {
-        throw new Error(data.error || data.message || "STK Push failed");
-      }
+      if (!res.ok) throw new Error(data?.error || data?.message || "STK failed");
+
+      setStkSent(true);
 
       if (data?.ResponseCode === "0" || data?.success) {
-        toast.success("STK Push sent! Check your phone to complete payment.");
+        toast.success("STK sent. Complete payment on your phone.");
       } else {
-        toast.info("Request sent. Check your phone.", {
-          description:
-            data?.CustomerMessage || data?.message || "If no prompt appears, try again.",
+        toast.info("Request received. Check your phone.", {
+          description: data?.CustomerMessage || "If no prompt appears, use manual payment below.",
         });
       }
     } catch (err: any) {
       console.error(err);
-      toast.error("Payment failed", {
-        description: err.message || "Network or server error",
+      setStkSent(true); // force fallback
+      toast.error("STK failed", {
+        description: err.message || "Proceed with manual M-Pesa payment.",
       });
     } finally {
       setPaying(false);
     }
   };
 
-  const inputClass =
-    "w-full px-4 py-3 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-primary focus:outline-none";
+  // ================= MANUAL CONFIRM =================
+  const handleConfirm = () => {
+    const msg = confirmMsg.toLowerCase();
 
-  const totalSteps = 4;
+    if (msg.includes("starnet ventures")) {
+      setConfirmStatus("success");
+    } else {
+      setConfirmStatus("error");
+    }
+  };
+
+  const inputClass =
+    "w-full px-4 py-3 border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-primary";
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen flex flex-col bg-background">
       <Header />
 
       <main className="flex-1">
-        <div className="bg-primary py-8">
+        {/* HEADER */}
+        <div className="bg-primary py-8 text-primary-foreground">
           <div className="container mx-auto px-4">
-            <h1 className="text-2xl md:text-3xl font-bold text-primary-foreground">
-              Apply for a Loan
-            </h1>
-            <p className="text-primary-foreground/80 mt-1">
-              Complete the form below to get your loan in minutes
-            </p>
+            <h1 className="text-3xl font-bold">Apply for a Loan</h1>
+            <p className="opacity-80">Fill in details and get approved in minutes</p>
           </div>
         </div>
 
+        {/* FORM */}
         <div className="container mx-auto px-4 py-10 max-w-2xl">
-          {/* Progress steps */}
-          <div className="flex items-center justify-center gap-2 mb-10">
+          {/* STEPS */}
+          <div className="flex justify-center mb-10 gap-2">
             {[1, 2, 3, 4].map((s) => (
               <div key={s} className="flex items-center gap-2">
-                <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ${
-                    s <= step
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground"
-                  }`}
-                >
+                <div className={`w-10 h-10 flex items-center justify-center rounded-full font-bold ${s <= step ? "bg-primary text-white" : "bg-muted"}`}>
                   {s}
                 </div>
-                {s < totalSteps && (
-                  <div className={`w-12 h-1 rounded ${s < step ? "bg-primary" : "bg-muted"}`} />
-                )}
+                {s < totalSteps && <div className={`w-10 h-1 ${s < step ? "bg-primary" : "bg-muted"}`} />}
               </div>
             ))}
           </div>
 
-          <form onSubmit={handleNext} className="space-y-6">
-            {/* Step 1 – Personal Info */}
+          <form onSubmit={nextStep} className="space-y-6">
+            {/* STEP 1 */}
             {step === 1 && (
               <>
-                <h2 className="text-xl font-semibold text-foreground">Personal Information</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-1">First Name</label>
-                    <input name="firstName" value={form.firstName} onChange={handleChange} required className={inputClass} placeholder="Enter first name" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-foreground mb-1">Last Name</label>
-                    <input name="lastName" value={form.lastName} onChange={handleChange} required className={inputClass} placeholder="Enter last name" />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-1">ID Number</label>
-                  <input name="idNumber" value={form.idNumber} onChange={handleChange} required className={inputClass} placeholder="National ID number" />
-                </div>
+                <h2 className="text-xl font-semibold">Personal Info</h2>
+                <input name="firstName" value={form.firstName} onChange={handleChange} required placeholder="First Name" className={inputClass} />
+                <input name="lastName" value={form.lastName} onChange={handleChange} required placeholder="Last Name" className={inputClass} />
+                <input name="idNumber" value={form.idNumber} onChange={handleChange} required placeholder="ID Number" className={inputClass} />
               </>
             )}
 
-            {/* Step 2 – Contact */}
+            {/* STEP 2 */}
             {step === 2 && (
               <>
-                <h2 className="text-xl font-semibold text-foreground">Contact Details</h2>
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-1">Phone Number</label>
-                  <input name="phone" value={form.phone} onChange={handleChange} required className={inputClass} placeholder="0700 000 000" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-1">Email Address</label>
-                  <input name="email" type="email" value={form.email} onChange={handleChange} className={inputClass} placeholder="your@email.com (optional)" />
-                </div>
+                <h2 className="text-xl font-semibold">Contact</h2>
+                <input name="phone" value={form.phone} onChange={handleChange} required placeholder="07XX XXX XXX" className={inputClass} />
+                <input name="email" value={form.email} onChange={handleChange} placeholder="Email (optional)" className={inputClass} />
               </>
             )}
 
-            {/* Step 3 – Loan Details */}
+            {/* STEP 3 */}
             {step === 3 && (
               <>
-                <h2 className="text-xl font-semibold text-foreground">Loan Details</h2>
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-1">Loan Amount (KES)</label>
-                  <input name="amount" type="number" value={form.amount} onChange={handleChange} required className={inputClass} placeholder="e.g. 5000" min="500" max="150000" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-1">Loan Period</label>
-                  <select name="period" value={form.period} onChange={handleChange} className={inputClass}>
-                    <option value="14">14 days</option>
-                    <option value="21">21 days</option>
-                    <option value="30">30 days</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-1">Purpose</label>
-                  <select name="purpose" value={form.purpose} onChange={handleChange} required className={inputClass}>
-                    <option value="">Select purpose</option>
-                    <option value="business">Business</option>
-                    <option value="personal">Personal</option>
-                    <option value="emergency">Emergency</option>
-                    <option value="education">Education</option>
-                    <option value="medical">Medical</option>
-                  </select>
-                </div>
-                {fee !== null && (
-                  <div className="p-4 rounded-lg bg-muted border border-border">
-                    <p className="text-sm text-muted-foreground">Application Fee</p>
-                    <p className="text-2xl font-bold text-foreground">{formatKES(fee)}</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      For {formatKES(Number(form.amount))} over {form.period} days
-                    </p>
+                <h2 className="text-xl font-semibold">Loan Details</h2>
+                <input name="amount" type="number" value={form.amount} onChange={handleChange} required placeholder="Amount (KES)" className={inputClass} />
+
+                <select name="period" value={form.period} onChange={handleChange} className={inputClass}>
+                  <option value="14">14 days</option>
+                  <option value="21">21 days</option>
+                  <option value="30">30 days</option>
+                </select>
+
+                {fee && (
+                  <div className="p-4 bg-muted rounded-lg">
+                    <p>Application Fee</p>
+                    <p className="text-2xl font-bold">{formatKES(fee)}</p>
                   </div>
                 )}
               </>
             )}
 
-            {/* Step 4 – Payment */}
+            {/* STEP 4 */}
             {step === 4 && (
               <>
-                <h2 className="text-xl font-semibold text-foreground">Confirm & Pay Fee</h2>
-                <div className="p-5 rounded-lg bg-primary/10 border border-primary/30 text-center space-y-2">
-                  <p className="text-sm text-foreground">Your loan is <span className="font-bold text-primary">approved!</span></p>
-                  <p className="text-3xl font-bold text-foreground">{fee !== null ? formatKES(fee) : "—"}</p>
-                  <p className="text-sm text-muted-foreground">Application fee to be paid via M-Pesa</p>
-                </div>
+                <h2 className="text-xl font-semibold">Payment</h2>
 
-                <button
-                  type="button"
-                  onClick={handlePay}
-                  disabled={paying}
-                  className="w-full py-4 bg-secondary text-secondary-foreground rounded-lg font-bold text-lg hover:brightness-110 transition-all disabled:opacity-50"
-                >
-                  {paying ? "Sending STK Push…" : `Pay ${fee !== null ? formatKES(fee) : ""} via M-Pesa`}
+                <button type="button" onClick={handlePay} disabled={paying} className="w-full py-4 bg-secondary rounded-lg font-bold">
+                  {paying ? "Processing..." : `Pay ${fee ? formatKES(fee) : ""}`}
                 </button>
+
+                {/* FALLBACK */}
+                {stkSent && (
+                  <div className="p-4 bg-muted rounded-lg space-y-3">
+                    <p className="font-semibold">Didn't receive STK?</p>
+
+                    <p>Pay via Till: <strong>{TILL_NUMBER}</strong></p>
+
+                    <textarea
+                      value={confirmMsg}
+                      onChange={(e) => setConfirmMsg(e.target.value)}
+                      placeholder="Paste M-Pesa message"
+                      className={inputClass}
+                    />
+
+                    <button type="button" onClick={handleConfirm} className="w-full py-3 bg-primary text-white rounded-lg">
+                      Confirm Payment
+                    </button>
+
+                    {confirmStatus === "success" && <p className="text-green-600">Payment confirmed</p>}
+                    {confirmStatus === "error" && <p className="text-red-600">Verification failed</p>}
+                  </div>
+                )}
               </>
             )}
 
-            {/* Navigation buttons */}
+            {/* NAV */}
             {step < 4 && (
-              <div className="flex items-center gap-4 pt-4">
-                {step > 1 && (
-                  <button type="button" onClick={() => setStep(step - 1)} className="px-8 py-3 border border-border rounded-lg text-foreground font-medium hover:bg-muted transition-colors">
-                    Back
-                  </button>
-                )}
-                <button type="submit" className="px-8 py-3 bg-primary text-primary-foreground rounded-lg font-semibold hover:brightness-110 transition-all">
-                  {step === 3 ? "Submit Application" : "Continue"}
-                </button>
-              </div>
-            )}
-
-            {step === 4 && (
-              <button type="button" onClick={() => setStep(3)} className="w-full py-3 border border-border rounded-lg text-foreground font-medium hover:bg-muted transition-colors">
-                ← Back to Loan Details
+              <button type="submit" className="w-full py-3 bg-primary text-white rounded-lg">
+                Continue
               </button>
             )}
           </form>
-
-          <p className="text-xs text-muted-foreground mt-8 text-center">
-            By applying, you agree to our{" "}
-            <Link to="#" className="text-primary underline">Terms & Conditions</Link> and{" "}
-            <Link to="#" className="text-primary underline">Privacy Policy</Link>.
-          </p>
         </div>
       </main>
 
